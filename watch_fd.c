@@ -7,6 +7,7 @@
 #include "monitor_fd.h"
 
 int watch(int pid, int interval, int time_limit);
+int safe_convert_to_int(char *pid);
 
 const char *argp_program_version = "fd-watcher 0.1";
 static char doc[] = "File descriptor watcher";
@@ -29,14 +30,47 @@ struct arguments {
     int interval;
 };
 
+int safe_convert_to_int(char *pid) {
+    // helper function to be sure that the provided pid is well formatted.
+    // courtesy of https://stackoverflow.com/questions/8871711/atoi-how-to-identify-the-difference-between-zero-and-error
+    long lnum;
+    int num;
+    char *end;
+
+    errno = 0;
+
+    lnum = strtol(pid, &end, 10);
+
+    if (end == pid) {
+        //if no characters were converted these pointers are equal
+        fprintf(stderr, "ERROR: can't convert string to number\n");
+        num = -1;
+
+    } else if ((lnum == LONG_MAX || lnum == LONG_MIN) && errno == ERANGE) {
+        //If sizeof(int) == sizeof(long), we have to explicitly check for overflows
+        fprintf(stderr, "ERROR: number out of range for LONG\n");
+        num = -1;
+
+    } else if ( (lnum > INT_MAX) || (lnum < INT_MIN) ) {
+        //Because strtol produces a long, check for overflow
+        fprintf(stderr, "ERROR: number out of range for INT\n");
+        num = -1;
+
+    } else {
+        num = (int) lnum;
+    }
+
+    return num;
+}
+
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     struct arguments *arguments = state->input;
     switch (key) {
         case 'i':
-            arguments->interval = atoi(arg);
+            arguments->interval = safe_convert_to_int(arg);
             break;
         case 't':
-            arguments->time = atoi(arg);
+            arguments->time = safe_convert_to_int(arg);
             break;
         case 'n':
             arguments->mode = WATCH_BY_NAME;
@@ -44,13 +78,19 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             break;
         case 'p':
             arguments->mode = WATCH_BY_PID;
-            arguments->pid = atoi(arg);
+            arguments->pid = safe_convert_to_int(arg);
             break;
         case ARGP_KEY_ARG:
             return 0;
         default:
             return ARGP_ERR_UNKNOWN;
     }
+
+    // check for error
+    if (arguments->interval == -1 || arguments->time == -1 || arguments->pid == -1) {
+        return 1;
+    }
+
     return 0;
 }
 
@@ -83,8 +123,15 @@ int main(int argc, char *argv[]) {
     arguments.interval = 1;
 
     // parse the arguments
-    argp_parse(&argp, argc, argv, 0, 0, &arguments);
+    int parsing_result;
+    parsing_result = argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
+    if (parsing_result == 1)
+    {
+        fprintf(stderr, "Bad usage\n");
+        return 1;
+    }
+    
 
     // get the pid
     int pid;
