@@ -8,6 +8,7 @@
 
 int watch(int pid, int interval, int time_limit);
 int safe_convert_to_int(char *pid);
+static error_t parse_opt(int key, char *arg, struct argp_state *state);
 
 const char *argp_program_version = "fd-watcher 0.1";
 static char doc[] = "File descriptor watcher";
@@ -32,7 +33,18 @@ struct arguments
     int time;
     int interval;
 };
+static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
+
+/**
+ * @brief Converts a string representation of an integer to an integer value safely.
+ *
+ * This function converts the input string `pid` to an integer value. It checks for
+ * invalid input, overflow, and underflow.
+ *
+ * @param pid Pointer to the string to convert.
+ * @return Returns the integer value if successful, otherwise returns -1 and prints an error message to stderr.
+ */
 int safe_convert_to_int(char *pid)
 {
     // helper function to be sure that the provided pid is well formatted.
@@ -71,6 +83,18 @@ int safe_convert_to_int(char *pid)
     return num;
 }
 
+/**
+ * @brief Parses command line arguments.
+ *
+ * This function parses the command line arguments using the argp library.
+ * It converts argument values to the appropriate data types and stores them
+ * in the `arguments` structure.
+ *
+ * @param key The option key.
+ * @param arg The option argument.
+ * @param state The parser state.
+ * @return Returns 0 if successful, otherwise returns an error code.
+ */
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
     struct arguments *arguments = state->input;
@@ -105,9 +129,20 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     return 0;
 }
 
+/**
+ * @brief Watches the descriptors of a process for a specified time interval.
+ *
+ * This function monitors the descriptors of the process with the given `pid`
+ * for a specified `time_limit`. It prints the number of descriptors at regular
+ * intervals defined by `interval`.
+ *
+ * @param pid The process ID to watch.
+ * @param interval The interval at which to check the descriptors.
+ * @param time_limit The maximum time to watch the process.
+ * @return Returns 0 if successful, otherwise returns an error code.
+ */
 int watch(int pid, int interval, int time_limit)
 {
-    // function to watch the descriptors of a certain process
     time_t end;
     time_t start = time(NULL);
     int descriptors;
@@ -138,7 +173,6 @@ int watch(int pid, int interval, int time_limit)
     return 0;
 }
 
-static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
 int main(int argc, char *argv[])
 {
