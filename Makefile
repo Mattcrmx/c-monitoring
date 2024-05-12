@@ -1,6 +1,6 @@
 CC=gcc
-DEPS= src/monitor_fd.h
-OBJ= src/monitor_fd.c src/watch_fd.c
+DEPS= src/monitor_fd.h src/utils.h
+OBJ= src/monitor_fd.c src/utils.c src/main.c
 CFLAGS = -g \
 		-W \
 		-Wall \

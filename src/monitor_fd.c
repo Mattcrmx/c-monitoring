@@ -4,104 +4,18 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include "utils.h"
+#include <time.h>
+#include <ctype.h>
+#include <unistd.h>
 
-int check_args(int args, int required);
-void *safe_malloc(size_t size);
-char *trim(char *str);
 int get_pid_by_name(char name[]);
 int count_descriptors_by_name(char name[]);
 int count_descriptors_by_pid(int pid);
-int is_number(char *nb);
-int process_exists(int pid);
+int watch(int pid, int interval, int time_limit);
 
 #define BUF_SIZE 1024
 char buffer[BUF_SIZE];
-
-/**
- * @brief Check if the given string represents a number.
- *
- * @param nb A pointer to the string to be checked.
- * @return 0 if the string represents a number, 1 otherwise.
- */
-int is_number(char *nb)
-{
-    for (int i = 0; nb[i] != '\0'; ++i)
-    {
-        if (!isdigit(nb[i]))
-        {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-/**
- * @brief Check if the number of arguments matches the required number.
- *
- * @param args     The number of arguments provided.
- * @param required The number of arguments required.
- * @return 0 if the number of arguments matches the required number, 1 otherwise.
- */
-int check_args(int args, int required)
-{
-    if (args != required)
-    {
-        printf("use: ./monitor_fd process_name\n");
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-/**
- * @brief Allocate memory safely using malloc.
- *
- * @param size The size of memory to allocate.
- * @return A pointer to the allocated memory.
- * @warning This function terminates the program with EXIT_FAILURE if memory allocation fails.
- */
-void *safe_malloc(size_t size)
-{
-    void *ptr = malloc(size);
-    if (ptr != NULL)
-    {
-        return ptr;
-    }
-    else
-    {
-        fprintf(stderr, "malloc of size %lu failed\n", size);
-        exit(EXIT_FAILURE);
-    }
-}
-
-/**
- * @brief Trim leading and trailing spaces from the given string.
- *
- * @param str A pointer to the string to be trimmed.
- * @return A pointer to the trimmed string.
- */
-char *trim(char *str)
-{
-    char *end;
-
-    // Trim leading space
-    while (isspace((unsigned char)*str))
-        str++;
-
-    if (*str == 0)
-        return str;
-
-    // Trim trailing space
-    end = str + strlen(str) - 1;
-    while (end > str && isspace((unsigned char)*end))
-        end--;
-
-    end[1] = '\0';
-
-    return str;
-}
 
 /**
  * @brief Get the process ID (PID) by process name.
@@ -249,4 +163,50 @@ int count_descriptors_by_pid(int pid)
 
     free(proc_path);
     return nb_fd;
+}
+
+int watch(int pid, int interval, int time_limit);
+
+/**
+ * @brief Watches the descriptors of a process for a specified time interval.
+ *
+ * This function monitors the descriptors of the process with the given `pid`
+ * for a specified `time_limit`. It prints the number of descriptors at regular
+ * intervals defined by `interval`.
+ *
+ * @param pid The process ID to watch.
+ * @param interval The interval at which to check the descriptors.
+ * @param time_limit The maximum time to watch the process.
+ * @return Returns 0 if successful, otherwise returns an error code.
+ */
+int watch(int pid, int interval, int time_limit)
+{
+    time_t end;
+    time_t start = time(NULL);
+    int descriptors;
+    end = start + time_limit;
+
+    if (!process_exists(pid))
+    {
+        printf("No process with pid [%d].\n", pid);
+        return 1;
+    }
+
+    while (start < end)
+    {
+        descriptors = count_descriptors_by_pid(pid);
+
+        switch (descriptors)
+        {
+        case -1:
+            return 0;
+
+        default:
+            fprintf(stderr, "process %d: %d\n", pid, descriptors);
+            sleep(interval);
+            start = time(NULL);
+            break;
+        }
+    }
+    return 0;
 }

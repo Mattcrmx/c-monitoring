@@ -1,13 +1,18 @@
 # fd-watcher
-A watchdog program that allows to monitor the number of file descriptors open by a process. At the moment it only accepts keyworded options and no arguments but it's likely subject to changes.
+A simple file descriptors watchdog. 
 
-## Compiling the code
+# Building
 Simply run the Makefile:
 ```bash
 make
 ```
+# Documentation
+Documentation is built with doxygen. Simply run
+```bash
+doxygen Doxyfile
+```
 
-The usage is as follows :
+# Usage
 ```bash
 ./fd-watcher --pid=42069
 ```
