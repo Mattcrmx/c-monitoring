@@ -116,9 +116,18 @@ int watch(int pid, int interval, int time_limit)
     while (start < end)
     {
         descriptors = count_descriptors_by_pid(pid);
-        fprintf(stderr, "process %d: %d\n", pid, descriptors);
-        sleep(interval);
-        start = time(NULL);
+
+        switch (descriptors)
+        {
+        case -1:
+            return 0;
+
+        default:
+            fprintf(stderr, "process %d: %d\n", pid, descriptors);
+            sleep(interval);
+            start = time(NULL);
+            break;
+        }
     }
     return 0;
 }
@@ -128,16 +137,16 @@ static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 int main(int argc, char *argv[])
 {
 
-    // default values for the arguments
+    int parsing_result;
+    int pid;
+
     struct arguments arguments;
     arguments.mode = WATCH_BY_NAME;
-    arguments.name = (char *)""; // forced casting to a pointer to avoid the warning: bad
+    arguments.name = (char *)""; // ugly casting to a pointer to avoid the warning
     arguments.pid = -1;
     arguments.time = 60;
     arguments.interval = 1;
 
-    // parse the arguments
-    int parsing_result;
     parsing_result = argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
     if (parsing_result == 1)
@@ -146,8 +155,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // get the pid
-    int pid;
     switch (arguments.mode)
     {
     case WATCH_BY_NAME:
@@ -158,7 +165,6 @@ int main(int argc, char *argv[])
         break;
     }
 
-    // watch
     watch(pid, arguments.interval, arguments.time);
 
     return 0;
