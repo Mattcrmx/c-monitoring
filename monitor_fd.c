@@ -12,6 +12,7 @@ int get_pid_by_name(char name[]);
 int count_descriptors_by_name(char name[]);
 int count_descriptors_by_pid(int pid);
 int is_number(char *nb);
+int process_exists(int pid);
 
 #define BUF_SIZE 1024
 char buffer[BUF_SIZE];
@@ -141,6 +142,24 @@ int get_pid_by_name(char name[])
     return -1;
 }
 
+int process_exists(int pid)
+{
+    char *proc_path = safe_malloc(16);
+    sprintf(proc_path, "/proc/%d/fd", pid);
+
+    DIR *proc_dir;
+    proc_dir = opendir(proc_path);
+    if (proc_dir)
+    {
+        closedir(proc_dir);
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 int count_descriptors_by_name(char name[])
 {
     // wrapper around the count_descriptors_by_pid function
@@ -153,20 +172,14 @@ int count_descriptors_by_name(char name[])
 int count_descriptors_by_pid(int pid)
 {
     int nb_fd = 0;
-
-    if (pid == -1)
-    {
-        printf("process %d was not found on the system.\n", pid);
-        return -1;
-    }
-
     char *proc_path = safe_malloc(9 + 6 + 1);
+
     sprintf(proc_path, "/proc/%d/fd", pid);
 
     DIR *proc_dir;
     proc_dir = opendir(proc_path);
 
-    if (proc_dir)
+    if (process_exists(pid))
     {
         struct dirent *de;
         while ((de = readdir(proc_dir)) != NULL)

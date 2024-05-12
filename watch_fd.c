@@ -113,6 +113,12 @@ int watch(int pid, int interval, int time_limit)
     int descriptors;
     end = start + time_limit;
 
+    if (!process_exists(pid))
+    {
+        printf("No process with pid [%d].\n", pid);
+        return 1;
+    }
+
     while (start < end)
     {
         descriptors = count_descriptors_by_pid(pid);
