@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 
 int check_args(int args, int required);
 void *safe_malloc(size_t size);
@@ -191,14 +192,20 @@ int count_descriptors_by_pid (int pid) {
     char *proc_path = safe_malloc(9 + 6 + 1);
     sprintf(proc_path, "/proc/%d/fd", pid);
 
-    // open the directory and read all the files
     DIR *proc_dir;
     proc_dir = opendir(proc_path);
-    struct dirent *de;
 
-    while ((de = readdir(proc_dir)) != NULL) {
-        nb_fd++;
+    if (proc_dir) {
+        struct dirent *de;
+        while ((de = readdir(proc_dir)) != NULL) {
+            nb_fd++;
+        }
+
+        closedir(proc_dir);
+    } else {
+        return -1;
     }
+
 
     return nb_fd;
 }
