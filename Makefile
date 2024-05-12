@@ -1,6 +1,6 @@
 CC=gcc
-DEPS= monitor_fd.h
-OBJ= monitor_fd.c watch_fd.c
+DEPS= src/monitor_fd.h
+OBJ= src/monitor_fd.c src/watch_fd.c
 CFLAGS = -g \
 		-W \
 		-Wall \
@@ -13,8 +13,7 @@ CFLAGS = -g \
 		-D_REENTRANT \
 		-D_LINUX_ \
 
-
-%.o: %.c $(DEPS)
+%.o: src/%.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 fd-watcher: $(OBJ)
