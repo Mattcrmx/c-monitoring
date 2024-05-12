@@ -9,7 +9,6 @@ int check_args(int args, int required);
 void *safe_malloc(size_t size);
 char *trim(char *str);
 int get_pid_by_name(char name[]);
-int get_pid_by_name_naive(char name[], int start, int end);
 int count_descriptors_by_name (char name[]);
 int count_descriptors_by_pid (int pid);
 int is_number (char *nb);
@@ -54,66 +53,18 @@ char *trim (char *str) {
     // Trim leading space
     while(isspace((unsigned char)*str)) str++;
 
-    if(*str == 0)  // All spaces?
+    if(*str == 0)  
         return str;
 
     // Trim trailing space
     end = str + strlen(str) - 1;
     while(end > str && isspace((unsigned char)*end)) end--;
 
-    // Write new null terminator character
     end[1] = '\0';
 
     return str;
 }
 
-int get_pid_by_name_naive (char name[], int start, int end) {
-    // naive function that relies on /proc to search
-    // for process dirs and status files to find the
-    // pid based on the name
-
-    for (int i = start; i < end; ++i) {
-
-        // read the content of the file in memory
-        // 13 for /proc and /status, 6 max for proc nb +1
-        char *status_path = safe_malloc(13 + 6 + 1);
-        sprintf(status_path, "/proc/%d/status", i);
-
-        FILE *fp;
-        fp  = fopen(status_path, "r");
-        long length;
-
-        if (fp != NULL) {
-            // read the file's content
-            while (fgets(buffer, BUF_SIZE, fp) != NULL) {
-                // Total character read count
-                length = strlen(buffer);
-                 // Trim new line character from last if exists.
-                buffer[length-1] = buffer[length-1] == '\n' ? '\0' : buffer[length-1];
-
-                // find the name
-                char *res = strstr(buffer, "Name");
-                if (res) {
-                    char proc_name[255];
-                    strcpy(proc_name, trim(&buffer[5]));
-                    // printf("name %s - proc_name %s - pid %d\n", name, proc_name, i);
-
-                    if (strcmp(name, proc_name) == 0) {
-                        printf("name : %s - pid: %d\n", proc_name, i);
-                        return i;
-                    }
-                }
-            }
-            //break;
-        }
-        else {
-            continue;
-        }
-        // free mallocs
-        free(status_path);
-    }
-    return -1;
-}
 
 int get_pid_by_name (char name[]) {
     DIR *proc;
