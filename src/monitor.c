@@ -10,6 +10,13 @@
 #include "utils.h"
 #include "monitor.h"
 
+struct DescriptorsArray
+{
+    int *descriptors;
+    int *timestamps;
+    int length
+};
+
 /**
  * @brief Count the number of file descriptors associated with a process by PID.
  *
@@ -60,10 +67,9 @@ int count_descriptors_by_pid(int pid)
  */
 int watch(int pid, int interval, int time_limit)
 {
-    time_t end;
-    time_t start = time(NULL);
     int descriptors;
-    end = start + time_limit;
+    time_t start = time(NULL);
+    time_t end = start + time_limit;
 
     if (!process_exists(pid))
     {
@@ -88,4 +94,76 @@ int watch(int pid, int interval, int time_limit)
         }
     }
     return 0;
+}
+
+struct DescriptorsArray *generate_fd_stats(int pid, int interval, int time_limit)
+{
+    int nb_descriptors;
+    time_t start = time(NULL);
+    time_t end = start + time_limit;
+    long nb_slots = (end - start) / interval + 1;
+    int *descriptors = (int)safe_malloc(nb_slots * sizeof(int));
+    int *timestamps = (int)safe_malloc(nb_slots * sizeof(int));
+    struct DescriptorsArray *desc_array;
+
+    if (!process_exists(pid))
+    {
+        printf("No process with pid [%d].\n", pid);
+        return 1;
+    }
+
+    for (size_t i = 0; i < nb_slots; i++)
+    {
+        nb_descriptors = count_descriptors_by_pid(pid);
+
+        switch (nb_descriptors)
+        {
+        case -1:
+            // return empty array
+            free(descriptors);
+            desc_array->descriptors = NULL;
+            desc_array->timestamps = NULL;
+            desc_array->length = 0;
+            return desc_array;
+
+        default:
+            descriptors[i] = nb_descriptors;
+            timestamps[i] = start + i * interval;
+            sleep(interval);
+            break;
+        }
+    }
+
+    // return pointer to descriptors
+    desc_array->descriptors = descriptors;
+    desc_array->timestamps = timestamps;
+    desc_array->length = nb_descriptors;
+
+    return desc_array;
+}
+
+int write_stats_to_csv(struct DescriptorsArray *desc_array, char *process_name)
+{
+    char filepath[255];
+    sprintf(filepath, "./fd_stats_%s.csv", process_name);
+    FILE *fp;
+    fp = fopen(filepath, "w");
+
+    if (fp != NULL)
+    {
+        for (size_t i = 0; i < desc_array->length; i++)
+        {
+            fprintf(fp, "%d, %d\n", desc_array->timestamps[i], desc_array->descriptors[i]);
+        }
+    }
+    else
+    {
+        flcose(fp);
+        fprintf(stderr, "failed to create %s", filepath);
+        return 0;
+    }
+
+    flcose(fp);
+
+    return 1;
 }
