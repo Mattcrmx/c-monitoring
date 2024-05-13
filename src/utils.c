@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
+#include <stdio.h>
 #include "utils.h"
 
 #define BUF_SIZE 1024
@@ -122,38 +123,32 @@ char *trim(char *str)
 }
 
 /**
- * @brief Get the process ID (PID) by process name.
+ * @brief Get the pid from the process name.
  *
  * @param name The name of the process.
- * @return The PID of the process, or -1 if the process is not found.
+ * @return The pid of the process, or -1 if the process is not found.
  */
 int get_pid_by_name(char name[])
 {
     DIR *proc;
+    struct dirent *de;
+
     proc = opendir("/proc");
     char *status_path = safe_malloc(50);
-    struct dirent *de;
 
     while ((de = readdir(proc)) != NULL)
     {
+        FILE *fp;
+        long length;
 
-        // skip files
-
-        if (de->d_type != DT_DIR)
-        {
-            continue;
-        }
-
-        // skip . and ..
-        if (is_number(de->d_name) == 1)
+        // skip files and skip . and ..
+        if (de->d_type != DT_DIR || is_number(de->d_name) == 1)
         {
             continue;
         }
 
         sprintf(status_path, "/proc/%s/status", de->d_name);
-        FILE *fp;
         fp = fopen(status_path, "r");
-        long length;
 
         if (fp != NULL)
         {
@@ -173,7 +168,7 @@ int get_pid_by_name(char name[])
 
                     if (strcmp(name, proc_name) == 0)
                     {
-                        printf("name : %s - pid: %s\n", proc_name, de->d_name);
+                        free(status_path);
                         return atoi(de->d_name);
                     }
                 }

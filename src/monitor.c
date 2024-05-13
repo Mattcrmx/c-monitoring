@@ -8,22 +8,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include "utils.h"
-#include "monitor_fd.h"
-
-/**
- * @brief Count the number of file descriptors associated with a process by process name.
- *
- * @param name The name of the process.
- * @return The number of file descriptors associated with the process.
- */
-int count_descriptors_by_name(char name[])
-{
-    // wrapper around the count_descriptors_by_pid function
-    int pid = get_pid_by_name(name);
-    int descriptors = count_descriptors_by_pid(pid);
-
-    return descriptors;
-}
+#include "monitor.h"
 
 /**
  * @brief Count the number of file descriptors associated with a process by PID.
