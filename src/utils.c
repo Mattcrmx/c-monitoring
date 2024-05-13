@@ -5,13 +5,6 @@
 #include <dirent.h>
 #include "utils.h"
 
-int safe_convert_to_int(char *pid);
-error_t parse_opt(int key, char *arg, struct argp_state *state);
-int check_args(int args, int required);
-void *safe_malloc(size_t size);
-char *trim(char *str);
-int is_number(char *nb);
-int process_exists(int pid);
 
 #define BUF_SIZE 1024
 char buffer[BUF_SIZE];
