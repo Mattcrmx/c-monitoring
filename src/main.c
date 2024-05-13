@@ -23,10 +23,8 @@ int main(int argc, char *argv[])
 {
 
     int parsing_result;
-    int pid;
 
     struct arguments arguments;
-    arguments.mode = WATCH_BY_NAME;
     arguments.name = (char *)""; // ugly casting to a pointer to avoid the warning
     arguments.pid = -1;
     arguments.time = 60;
@@ -40,17 +38,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    switch (arguments.mode)
-    {
-    case WATCH_BY_NAME:
-        pid = get_pid_by_name(arguments.name);
-        break;
-    case WATCH_BY_PID:
-        pid = arguments.pid;
-        break;
-    }
-
-    watch(pid, arguments.interval, arguments.time);
+    watch(arguments.pid, arguments.interval, arguments.time);
 
     return 0;
 };

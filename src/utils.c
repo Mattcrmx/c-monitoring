@@ -2,6 +2,7 @@
 #include <argp.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
 #include "utils.h"
 
 int safe_convert_to_int(char *pid);
@@ -11,6 +12,9 @@ void *safe_malloc(size_t size);
 char *trim(char *str);
 int is_number(char *nb);
 int process_exists(int pid);
+
+#define BUF_SIZE 1024
+char buffer[BUF_SIZE];
 
 /**
  * @brief Check if the number of arguments matches the required number.
@@ -56,11 +60,10 @@ error_t parse_opt(int key, char *arg, struct argp_state *state)
         arguments->time = safe_convert_to_int(arg);
         break;
     case 'n':
-        arguments->mode = WATCH_BY_NAME;
         arguments->name = arg;
+        arguments->pid = get_pid_by_name(arg);
         break;
     case 'p':
-        arguments->mode = WATCH_BY_PID;
         arguments->pid = safe_convert_to_int(arg);
         break;
     case ARGP_KEY_ARG:
@@ -70,8 +73,19 @@ error_t parse_opt(int key, char *arg, struct argp_state *state)
     }
 
     // check for error
-    if (arguments->interval == -1 || arguments->time == -1 || arguments->pid == -1)
+    if (arguments->interval == -1)
     {
+        fprintf(stderr, "Failed to parse interval argument.\n");
+        return 1;
+    }
+    if (arguments->time == -1)
+    {
+        fprintf(stderr, "Failed to parse time argument.\n");
+        return 1;
+    }
+    if (arguments->pid == -1)
+    {
+        fprintf(stderr, "Failed to parse pid.\n");
         return 1;
     }
 
@@ -189,4 +203,99 @@ char *trim(char *str)
     end[1] = '\0';
 
     return str;
+}
+
+/**
+ * @brief Get the process ID (PID) by process name.
+ *
+ * @param name The name of the process.
+ * @return The PID of the process, or -1 if the process is not found.
+ */
+int get_pid_by_name(char name[])
+{
+    DIR *proc;
+    proc = opendir("/proc");
+    char *status_path = safe_malloc(50);
+    struct dirent *de;
+
+    while ((de = readdir(proc)) != NULL)
+    {
+
+        // skip files
+
+        if (de->d_type != DT_DIR)
+        {
+            continue;
+        }
+
+        // skip . and ..
+        if (is_number(de->d_name) == 1)
+        {
+            continue;
+        }
+
+        sprintf(status_path, "/proc/%s/status", de->d_name);
+        FILE *fp;
+        fp = fopen(status_path, "r");
+        long length;
+
+        if (fp != NULL)
+        {
+            // read the file's content
+            while (fgets(buffer, BUF_SIZE, fp) != NULL)
+            {
+                length = strlen(buffer);
+                // Trim new line character from last if exists.
+                buffer[length - 1] = buffer[length - 1] == '\n' ? '\0' : buffer[length - 1];
+
+                // find the name
+                char *res = strstr(buffer, "Name");
+                if (res)
+                {
+                    char proc_name[255];
+                    strcpy(proc_name, trim(&buffer[5]));
+
+                    if (strcmp(name, proc_name) == 0)
+                    {
+                        printf("name : %s - pid: %s\n", proc_name, de->d_name);
+                        return atoi(de->d_name);
+                    }
+                }
+            }
+        }
+        else
+        {
+            continue;
+        }
+    }
+
+    free(status_path);
+
+    return -1;
+}
+
+/**
+ * @brief Check if a process with the given PID exists.
+ *
+ * @param pid The PID of the process to check.
+ * @return 1 if the process exists, 0 otherwise.
+ */
+int process_exists(int pid)
+{
+    char *proc_path = safe_malloc(16);
+    sprintf(proc_path, "/proc/%d/fd", pid);
+
+    DIR *proc_dir;
+    proc_dir = opendir(proc_path);
+    if (proc_dir)
+    {
+        closedir(proc_dir);
+        free(proc_path);
+        return 1;
+    }
+    else
+    {
+        free(proc_path);
+        return 0;
+    }
 }
