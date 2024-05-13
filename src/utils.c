@@ -5,85 +5,8 @@
 #include <dirent.h>
 #include "utils.h"
 
-
 #define BUF_SIZE 1024
 char buffer[BUF_SIZE];
-
-/**
- * @brief Check if the number of arguments matches the required number.
- *
- * @param args     The number of arguments provided.
- * @param required The number of arguments required.
- * @return 0 if the number of arguments matches the required number, 1 otherwise.
- */
-int check_args(int args, int required)
-{
-    if (args != required)
-    {
-        printf("use: ./monitor_fd process_name\n");
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-/**
- * @brief Parses command line arguments.
- *
- * This function parses the command line arguments using the argp library.
- * It converts argument values to the appropriate data types and stores them
- * in the `arguments` structure.
- *
- * @param key The option key.
- * @param arg The option argument.
- * @param state The parser state.
- * @return Returns 0 if successful, otherwise returns an error code.
- */
-error_t parse_opt(int key, char *arg, struct argp_state *state)
-{
-    struct arguments *arguments = state->input;
-    switch (key)
-    {
-    case 'i':
-        arguments->interval = safe_convert_to_int(arg);
-        break;
-    case 't':
-        arguments->time = safe_convert_to_int(arg);
-        break;
-    case 'n':
-        arguments->name = arg;
-        arguments->pid = get_pid_by_name(arg);
-        break;
-    case 'p':
-        arguments->pid = safe_convert_to_int(arg);
-        break;
-    case ARGP_KEY_ARG:
-        return 0;
-    default:
-        return ARGP_ERR_UNKNOWN;
-    }
-
-    // check for error
-    if (arguments->interval == -1)
-    {
-        fprintf(stderr, "Failed to parse interval argument.\n");
-        return 1;
-    }
-    if (arguments->time == -1)
-    {
-        fprintf(stderr, "Failed to parse time argument.\n");
-        return 1;
-    }
-    if (arguments->pid == -1)
-    {
-        fprintf(stderr, "Failed to parse pid.\n");
-        return 1;
-    }
-
-    return 0;
-}
 
 /**
  * @brief Converts a string representation of an integer to an integer value safely.
