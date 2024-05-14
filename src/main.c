@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     Arguments arguments;
     arguments.name = NULL;
     arguments.pid = -1;
-    arguments.time = 60;
+    arguments.time = 5;
     arguments.interval = 1;
     arguments.stats = 0;
     arguments.mode = LOGGER;

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <time.h>
 #include "utils.h"
+#include "monitor.h"
 
 #define BUF_SIZE 1024
 char buffer[BUF_SIZE];

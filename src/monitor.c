@@ -12,6 +12,7 @@ static DescriptorsArray *generate_fd_stats(int pid, int interval,
 static int write_stats_to_csv(DescriptorsArray *desc_array, char *process_name);
 static int logger_watcher(int pid, int interval, int time_limit);
 static int count_descriptors_by_pid(int pid);
+static void print_desc_array(DescriptorsArray *arr);
 
 /**
  * @brief Count the number of file descriptors associated with a process by PID.
@@ -98,6 +99,16 @@ static int logger_watcher(int pid, int interval, int time_limit) {
     return 0;
 }
 
+/**
+ * @brief Generates file descriptor statistics for a given process.
+ *
+ * @param pid The process ID.
+ * @param interval Sampling interval in seconds.
+ * @param time_limit Maximum duration in seconds.
+ * @return Pointer to DescriptorsArray with statistics, or NULL if process
+ * doesn't exist or on error.
+ *
+ */
 static DescriptorsArray *generate_fd_stats(int pid, int interval,
                                            int time_limit) {
     int nb_descriptors;
@@ -117,8 +128,6 @@ static DescriptorsArray *generate_fd_stats(int pid, int interval,
     if (!process_exists(pid)) {
         // avoid generating stats and free
         printf("No process with pid [%d].\n", pid);
-        free(descriptors);
-        free(timestamps);
         free(desc_array);
         return NULL;
     }
@@ -128,8 +137,6 @@ static DescriptorsArray *generate_fd_stats(int pid, int interval,
 
         switch (nb_descriptors) {
         case -1:
-            free(descriptors);
-            free(timestamps);
             free(desc_array);
             return NULL;
 
@@ -137,6 +144,7 @@ static DescriptorsArray *generate_fd_stats(int pid, int interval,
             // increment both tick and descriptors
             descriptors[i] = nb_descriptors;
             timestamps[i] = start + i * interval;
+            fprintf(stderr, "process %d: %d\n", pid, nb_descriptors);
             sleep(interval);
             break;
         }
@@ -146,9 +154,23 @@ static DescriptorsArray *generate_fd_stats(int pid, int interval,
     desc_array->timestamps = timestamps;
     desc_array->length = nb_slots;
 
+    print_desc_array(desc_array);
+
     return desc_array;
 }
 
+/**
+ * Writes file descriptor statistics to a CSV file.
+ *
+ * @param desc_array Pointer to the DescriptorsArray containing the statistics.
+ * @param process_name The name of the process for which statistics are
+ * generated.
+ * @return Returns 0 on success, 1 on failure.
+ *
+ * This function writes the file descriptor statistics stored in the given
+ * DescriptorsArray to a CSV file. The file is named based on the provided
+ * process name.
+ */
 static int write_stats_to_csv(DescriptorsArray *desc_array,
                               char *process_name) {
     // generate file path and write csv
@@ -163,12 +185,32 @@ static int write_stats_to_csv(DescriptorsArray *desc_array,
                     desc_array->descriptors[i]);
         }
     } else {
+        free(desc_array);
         fclose(fp);
         fprintf(stderr, "failed to create %s", filepath);
-        return 0;
+        return 1;
     }
 
     fclose(fp);
 
-    return 1;
+    return 0;
+}
+
+/**
+ * Prints the contents of a DescriptorsArray.
+ *
+ * @param arr Pointer to the DescriptorsArray to be printed.
+ *
+ * This function prints the descriptors and timestamps stored in the given
+ * DescriptorsArray. Each entry in the array is printed as (descriptor_count,
+ * timestamp).
+ */
+static void print_desc_array(DescriptorsArray *arr) {
+    fprintf(stderr, "array: [\n");
+
+    for (int i; i < arr->length; i++) {
+        fprintf(stderr, "   (%d, %d), \n", arr->descriptors[i],
+                arr->timestamps[i]);
+    }
+    fprintf(stderr, "]\n");
 }
