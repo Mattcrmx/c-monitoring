@@ -8,12 +8,12 @@ char *trim(char *str);
 #ifndef UTILS_H
 #define UTILS_H
 
-struct arguments
-{
+struct arguments {
     char *name;
     int pid;
     int time;
     int interval;
+    int stats;
 };
 
 #endif // UTILS_H

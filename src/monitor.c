@@ -14,28 +14,28 @@
  * @return The number of file descriptors associated with the process.
  */
 int count_descriptors_by_pid(int pid) {
-  int nb_fd = 0;
-  char *proc_path = safe_malloc(9 + 6 + 1);
+    int nb_fd = 0;
+    char *proc_path = safe_malloc(9 + 6 + 1);
 
-  sprintf(proc_path, "/proc/%d/fd", pid);
+    sprintf(proc_path, "/proc/%d/fd", pid);
 
-  DIR *proc_dir;
-  proc_dir = opendir(proc_path);
+    DIR *proc_dir;
+    proc_dir = opendir(proc_path);
 
-  if (process_exists(pid)) {
-    struct dirent *de;
-    while ((de = readdir(proc_dir)) != NULL) {
-      nb_fd++;
+    if (process_exists(pid)) {
+        struct dirent *de;
+        while ((de = readdir(proc_dir)) != NULL) {
+            nb_fd++;
+        }
+
+        closedir(proc_dir);
+    } else {
+        free(proc_path);
+        return -1;
     }
 
-    closedir(proc_dir);
-  } else {
     free(proc_path);
-    return -1;
-  }
-
-  free(proc_path);
-  return nb_fd;
+    return nb_fd;
 }
 
 /**
@@ -51,102 +51,102 @@ int count_descriptors_by_pid(int pid) {
  * @return Returns 0 if successful, otherwise returns an error code.
  */
 int watch(int pid, int interval, int time_limit) {
-  int descriptors;
-  time_t start = time(NULL);
-  time_t end = start + time_limit;
+    int descriptors;
+    time_t start = time(NULL);
+    time_t end = start + time_limit;
 
-  if (!process_exists(pid)) {
-    printf("No process with pid [%d].\n", pid);
-    return 1;
-  }
-
-  while (start < end) {
-    descriptors = count_descriptors_by_pid(pid);
-
-    switch (descriptors) {
-    case -1:
-      return 0;
-
-    default:
-      fprintf(stderr, "process %d: %d\n", pid, descriptors);
-      sleep(interval);
-      start = time(NULL);
-      break;
+    if (!process_exists(pid)) {
+        printf("No process with pid [%d].\n", pid);
+        return 1;
     }
-  }
-  return 0;
+
+    while (start < end) {
+        descriptors = count_descriptors_by_pid(pid);
+
+        switch (descriptors) {
+        case -1:
+            return 0;
+
+        default:
+            fprintf(stderr, "process %d: %d\n", pid, descriptors);
+            sleep(interval);
+            start = time(NULL);
+            break;
+        }
+    }
+    return 0;
 }
 
 struct DescriptorsArray *generate_fd_stats(int pid, int interval,
                                            int time_limit) {
-  int nb_descriptors;
-  time_t start = time(NULL);
-  time_t end = start + time_limit;
-  long nb_slots = (end - start) / interval + 1;
-  int *descriptors = (int *)safe_malloc(nb_slots * sizeof(int));
-  int *timestamps = (int *)safe_malloc(nb_slots * sizeof(int));
+    int nb_descriptors;
+    time_t start = time(NULL);
+    time_t end = start + time_limit;
+    long nb_slots = (end - start) / interval + 1;
+    int *descriptors = (int *)safe_malloc(nb_slots * sizeof(int));
+    int *timestamps = (int *)safe_malloc(nb_slots * sizeof(int));
 
-  struct DescriptorsArray *desc_array =
-      (struct DescriptorsArray *)safe_malloc(sizeof(struct DescriptorsArray));
+    struct DescriptorsArray *desc_array =
+        (struct DescriptorsArray *)safe_malloc(sizeof(struct DescriptorsArray));
 
-  desc_array->descriptors = NULL;
-  desc_array->timestamps = NULL;
-  desc_array->length = 0;
+    desc_array->descriptors = NULL;
+    desc_array->timestamps = NULL;
+    desc_array->length = 0;
 
-  if (!process_exists(pid)) {
-    // avoid generating stats and free
-    printf("No process with pid [%d].\n", pid);
-    free(descriptors);
-    free(timestamps);
-    free(desc_array);
-    return NULL;
-  }
-
-  for (int i = 0; i < nb_slots; i++) {
-    nb_descriptors = count_descriptors_by_pid(pid);
-
-    switch (nb_descriptors) {
-    case -1:
-      free(descriptors);
-      free(timestamps);
-      free(desc_array);
-      return NULL;
-
-    default:
-      // increment both tick and descriptors
-      descriptors[i] = nb_descriptors;
-      timestamps[i] = start + i * interval;
-      sleep(interval);
-      break;
+    if (!process_exists(pid)) {
+        // avoid generating stats and free
+        printf("No process with pid [%d].\n", pid);
+        free(descriptors);
+        free(timestamps);
+        free(desc_array);
+        return NULL;
     }
-  }
 
-  desc_array->descriptors = descriptors;
-  desc_array->timestamps = timestamps;
-  desc_array->length = nb_slots;
+    for (int i = 0; i < nb_slots; i++) {
+        nb_descriptors = count_descriptors_by_pid(pid);
 
-  return desc_array;
+        switch (nb_descriptors) {
+        case -1:
+            free(descriptors);
+            free(timestamps);
+            free(desc_array);
+            return NULL;
+
+        default:
+            // increment both tick and descriptors
+            descriptors[i] = nb_descriptors;
+            timestamps[i] = start + i * interval;
+            sleep(interval);
+            break;
+        }
+    }
+
+    desc_array->descriptors = descriptors;
+    desc_array->timestamps = timestamps;
+    desc_array->length = nb_slots;
+
+    return desc_array;
 }
 
 int write_stats_to_csv(struct DescriptorsArray *desc_array,
                        char *process_name) {
-  char filepath[255];
-  sprintf(filepath, "./fd_stats_%s.csv", process_name);
-  FILE *fp;
-  fp = fopen(filepath, "w");
+    char filepath[255];
+    sprintf(filepath, "./fd_stats_%s.csv", process_name);
+    FILE *fp;
+    fp = fopen(filepath, "w");
 
-  if (fp != NULL) {
-    for (int i = 0; i < desc_array->length; i++) {
-      fprintf(fp, "%d, %d\n", desc_array->timestamps[i],
-              desc_array->descriptors[i]);
+    if (fp != NULL) {
+        for (int i = 0; i < desc_array->length; i++) {
+            fprintf(fp, "%d, %d\n", desc_array->timestamps[i],
+                    desc_array->descriptors[i]);
+        }
+    } else {
+        fclose(fp);
+        fprintf(stderr, "failed to create %s", filepath);
+        return 0;
     }
-  } else {
+
     fclose(fp);
-    fprintf(stderr, "failed to create %s", filepath);
-    return 0;
-  }
 
-  fclose(fp);
-
-  return 1;
+    return 1;
 }

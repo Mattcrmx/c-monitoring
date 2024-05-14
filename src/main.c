@@ -1,8 +1,8 @@
 #include <argp.h>
 #include <stdio.h>
 #include <unistd.h>
-#include "utils.h"
 #include "monitor.h"
+#include "utils.h"
 
 error_t parse_opt(int key, char *arg, struct argp_state *state);
 
@@ -18,6 +18,7 @@ static struct argp_option options[] = {
      "The pid of the process to monitor.", 0},
     {"interval", 'i', "INTERVAL", OPTION_ARG_OPTIONAL,
      "The interval between watch, in seconds.", 0},
+
     {0} // needs to be terminated by a zero
 };
 static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
@@ -35,62 +36,66 @@ static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
  * @return Returns 0 if successful, otherwise returns an error code.
  */
 error_t parse_opt(int key, char *arg, struct argp_state *state) {
-  struct arguments *arguments = state->input;
-  switch (key) {
-  case 'i':
-    arguments->interval = safe_convert_to_int(arg);
-    break;
-  case 't':
-    arguments->time = safe_convert_to_int(arg);
-    break;
-  case 'n':
-    arguments->name = arg;
-    arguments->pid = get_pid_by_name(arg);
-    break;
-  case 'p':
-    arguments->pid = safe_convert_to_int(arg);
-    break;
-  case ARGP_KEY_ARG:
+    struct arguments *arguments = state->input;
+    switch (key) {
+    case 'i':
+        arguments->interval = safe_convert_to_int(arg);
+        break;
+    case 't':
+        arguments->time = safe_convert_to_int(arg);
+        break;
+    case 'n':
+        arguments->name = arg;
+        arguments->pid = get_pid_by_name(arg);
+        break;
+    case 'p':
+        arguments->pid = safe_convert_to_int(arg);
+        break;
+    case 's':
+        arguments->stats = 1;
+        break;
+    case ARGP_KEY_ARG:
+        return 0;
+    default:
+        return ARGP_ERR_UNKNOWN;
+    }
+
+    // check for error
+    if (arguments->interval == -1) {
+        fprintf(stderr, "Failed to parse interval argument.\n");
+        return 1;
+    }
+    if (arguments->time == -1) {
+        fprintf(stderr, "Failed to parse time argument.\n");
+        return 1;
+    }
+    if (arguments->pid == -1) {
+        fprintf(stderr, "Failed to parse pid.\n");
+        return 1;
+    }
+
     return 0;
-  default:
-    return ARGP_ERR_UNKNOWN;
-  }
-
-  // check for error
-  if (arguments->interval == -1) {
-    fprintf(stderr, "Failed to parse interval argument.\n");
-    return 1;
-  }
-  if (arguments->time == -1) {
-    fprintf(stderr, "Failed to parse time argument.\n");
-    return 1;
-  }
-  if (arguments->pid == -1) {
-    fprintf(stderr, "Failed to parse pid.\n");
-    return 1;
-  }
-
-  return 0;
 }
 
 int main(int argc, char *argv[]) {
 
-  int parsing_result;
+    int parsing_result;
 
-  struct arguments arguments;
-  arguments.name = (char *)""; // ugly casting to a pointer to avoid the warning
-  arguments.pid = -1;
-  arguments.time = 60;
-  arguments.interval = 1;
+    struct arguments arguments;
+    arguments.name =
+        (char *)""; // ugly casting to a pointer to avoid the warning
+    arguments.pid = -1;
+    arguments.time = 60;
+    arguments.interval = 1;
 
-  parsing_result = argp_parse(&argp, argc, argv, 0, 0, &arguments);
+    parsing_result = argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
-  if (parsing_result == 1) {
-    fprintf(stderr, "Bad usage\n");
-    return 1;
-  }
+    if (parsing_result == 1) {
+        fprintf(stderr, "Bad usage\n");
+        return 1;
+    }
 
-  watch(arguments.pid, arguments.interval, arguments.time);
+    watch(arguments.pid, arguments.interval, arguments.time);
 
-  return 0;
+    return 0;
 };
