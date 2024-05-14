@@ -190,7 +190,7 @@ static int write_stats_to_csv(DescriptorsArray *desc_array,
         fprintf(stderr, "failed to create %s", filepath);
         return 1;
     }
-
+    free(desc_array);
     fclose(fp);
 
     return 0;
