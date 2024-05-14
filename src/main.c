@@ -18,7 +18,7 @@ static struct argp_option options[] = {
      "The pid of the process to monitor.", 0},
     {"interval", 'i', "INTERVAL", OPTION_ARG_OPTIONAL,
      "The interval between watch, in seconds.", 0},
-
+    {"stats", 's', "STATS", OPTION_ARG_OPTIONAL, "Enable statistics.", 0},
     {0} // needs to be terminated by a zero
 };
 static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
@@ -36,7 +36,8 @@ static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
  * @return Returns 0 if successful, otherwise returns an error code.
  */
 error_t parse_opt(int key, char *arg, struct argp_state *state) {
-    struct arguments *arguments = state->input;
+    Arguments *arguments = state->input;
+    int pid;
     switch (key) {
     case 'i':
         arguments->interval = safe_convert_to_int(arg);
@@ -49,10 +50,13 @@ error_t parse_opt(int key, char *arg, struct argp_state *state) {
         arguments->pid = get_pid_by_name(arg);
         break;
     case 'p':
-        arguments->pid = safe_convert_to_int(arg);
+        pid = safe_convert_to_int(arg);
+        arguments->pid = pid;
+        arguments->name = get_name_from_pid(pid);
         break;
     case 's':
         arguments->stats = 1;
+        arguments->mode = STATISTICAL;
         break;
     case ARGP_KEY_ARG:
         return 0;
@@ -80,13 +84,15 @@ error_t parse_opt(int key, char *arg, struct argp_state *state) {
 int main(int argc, char *argv[]) {
 
     int parsing_result;
+    int watch_return_code;
 
-    struct arguments arguments;
-    arguments.name =
-        (char *)""; // ugly casting to a pointer to avoid the warning
+    Arguments arguments;
+    arguments.name = NULL;
     arguments.pid = -1;
     arguments.time = 60;
     arguments.interval = 1;
+    arguments.stats = 0;
+    arguments.mode = LOGGER;
 
     parsing_result = argp_parse(&argp, argc, argv, 0, 0, &arguments);
 
@@ -95,7 +101,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    watch(arguments.pid, arguments.interval, arguments.time);
+    watch_return_code = watch(arguments);
 
-    return 0;
+    return watch_return_code;
 };

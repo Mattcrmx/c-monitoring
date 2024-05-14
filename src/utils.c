@@ -4,10 +4,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "utils.h"
 
 #define BUF_SIZE 1024
 char buffer[BUF_SIZE];
+
+static int is_number(char *nb);
+static char *trim(char *str);
 
 /**
  * @brief Converts a string representation of an integer to an integer value
@@ -58,7 +62,7 @@ int safe_convert_to_int(char *pid) {
  * @param nb A pointer to the string to be checked.
  * @return 0 if the string represents a number, 1 otherwise.
  */
-int is_number(char *nb) {
+static int is_number(char *nb) {
     for (int i = 0; nb[i] != '\0'; ++i) {
         if (!isdigit(nb[i])) {
             return 1;
@@ -91,7 +95,7 @@ void *safe_malloc(size_t size) {
  * @param str A pointer to the string to be trimmed.
  * @return A pointer to the trimmed string.
  */
-char *trim(char *str) {
+static char *trim(char *str) {
     char *end;
 
     // Trim leading space
@@ -162,8 +166,46 @@ int get_pid_by_name(char name[]) {
     }
 
     free(status_path);
-
     return -1;
+}
+
+/**
+ * @brief Get the name of a process by its process ID.
+ *
+ * @param pid The process ID.
+ * @return The process name, or NULL if not found.
+ */
+char *get_name_from_pid(int pid) {
+    FILE *fp;
+    char proc_path[255];
+    sprintf(proc_path, "/proc/%d/status", pid);
+    fp = fopen(proc_path, "r");
+    long length;
+
+    if (fp) {
+        while (fgets(buffer, BUF_SIZE, fp) != NULL) {
+            length = strlen(buffer);
+            // Trim new line character from last if exists.
+            buffer[length - 1] =
+                buffer[length - 1] == '\n' ? '\0' : buffer[length - 1];
+
+            // find the name
+            char *res = strstr(buffer, "Name");
+            if (res) {
+                char *proc_name = safe_malloc(255);
+                strcpy(proc_name, trim(&buffer[5]));
+                return proc_name;
+            }
+        }
+        // If the loop completes without finding the name, close the file and
+        // return NULL
+        fclose(fp);
+        fprintf(stderr, "Error: Process name not found in status file.\n");
+        return NULL;
+    } else {
+        fprintf(stderr, "Error opening status file.\n");
+        return NULL;
+    }
 }
 
 /**

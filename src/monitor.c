@@ -7,15 +7,21 @@
 #include "monitor.h"
 #include "utils.h"
 
+static DescriptorsArray *generate_fd_stats(int pid, int interval,
+                                           int time_limit);
+static int write_stats_to_csv(DescriptorsArray *desc_array, char *process_name);
+static int logger_watcher(int pid, int interval, int time_limit);
+static int count_descriptors_by_pid(int pid);
+
 /**
  * @brief Count the number of file descriptors associated with a process by PID.
  *
  * @param pid The PID of the process.
  * @return The number of file descriptors associated with the process.
  */
-int count_descriptors_by_pid(int pid) {
+static int count_descriptors_by_pid(int pid) {
     int nb_fd = 0;
-    char *proc_path = safe_malloc(9 + 6 + 1);
+    char *proc_path = safe_malloc(16);
 
     sprintf(proc_path, "/proc/%d/fd", pid);
 
@@ -50,7 +56,25 @@ int count_descriptors_by_pid(int pid) {
  * @param time_limit The maximum time to watch the process.
  * @return Returns 0 if successful, otherwise returns an error code.
  */
-int watch(int pid, int interval, int time_limit) {
+int watch(Arguments arguments) {
+    int ret_code;
+    DescriptorsArray *desc_array;
+
+    switch (arguments.mode) {
+    case LOGGER:
+        ret_code =
+            logger_watcher(arguments.pid, arguments.interval, arguments.time);
+        break;
+    case STATISTICAL:
+        desc_array = generate_fd_stats(arguments.pid, arguments.interval,
+                                       arguments.time);
+        ret_code = write_stats_to_csv(desc_array, arguments.name);
+        break;
+    }
+    return ret_code;
+}
+
+static int logger_watcher(int pid, int interval, int time_limit) {
     int descriptors;
     time_t start = time(NULL);
     time_t end = start + time_limit;
@@ -63,21 +87,18 @@ int watch(int pid, int interval, int time_limit) {
     while (start < end) {
         descriptors = count_descriptors_by_pid(pid);
 
-        switch (descriptors) {
-        case -1:
+        if (descriptors == -1) {
             return 0;
-
-        default:
-            fprintf(stderr, "process %d: %d\n", pid, descriptors);
-            sleep(interval);
-            start = time(NULL);
-            break;
         }
+
+        fprintf(stderr, "process %d: %d\n", pid, descriptors);
+        sleep(interval);
+        start = time(NULL);
     }
     return 0;
 }
 
-struct DescriptorsArray *generate_fd_stats(int pid, int interval,
+static DescriptorsArray *generate_fd_stats(int pid, int interval,
                                            int time_limit) {
     int nb_descriptors;
     time_t start = time(NULL);
@@ -85,9 +106,9 @@ struct DescriptorsArray *generate_fd_stats(int pid, int interval,
     long nb_slots = (end - start) / interval + 1;
     int *descriptors = (int *)safe_malloc(nb_slots * sizeof(int));
     int *timestamps = (int *)safe_malloc(nb_slots * sizeof(int));
+    DescriptorsArray *desc_array;
 
-    struct DescriptorsArray *desc_array =
-        (struct DescriptorsArray *)safe_malloc(sizeof(struct DescriptorsArray));
+    desc_array = (DescriptorsArray *)safe_malloc(sizeof(DescriptorsArray));
 
     desc_array->descriptors = NULL;
     desc_array->timestamps = NULL;
@@ -128,8 +149,9 @@ struct DescriptorsArray *generate_fd_stats(int pid, int interval,
     return desc_array;
 }
 
-int write_stats_to_csv(struct DescriptorsArray *desc_array,
-                       char *process_name) {
+static int write_stats_to_csv(DescriptorsArray *desc_array,
+                              char *process_name) {
+    // generate file path and write csv
     char filepath[255];
     sprintf(filepath, "./fd_stats_%s.csv", process_name);
     FILE *fp;
