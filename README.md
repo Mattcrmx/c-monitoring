@@ -28,4 +28,5 @@ Options can be specified:
 -n --name: the name of the process to monitor
 -t --time: the time limit of the watchdog
 -i --interval: the interval at which the watchdog will watch the descriptors
+-s --stats: enable statistics collection, and csv export of the file descriptors monitoring
 ```
