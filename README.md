@@ -1,3 +1,8 @@
+<p align="center">
+<a href="https://ibb.co/yfGCVxW"><img src="https://i.ibb.co/YRYSbVp/image-9.png" alt="fd-watcher-logo" width="40%" height="40%"></a>
+</p>
+
+
 # fd-watcher
 A simple file descriptors watchdog.
 
