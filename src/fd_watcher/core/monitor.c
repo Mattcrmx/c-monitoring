@@ -76,7 +76,7 @@ int watch(Arguments arguments) {
 }
 
 static int logger_watcher(int pid, int interval, int time_limit) {
-    int descriptors;
+
     time_t start = time(NULL);
     time_t end = start + time_limit;
 
@@ -86,6 +86,7 @@ static int logger_watcher(int pid, int interval, int time_limit) {
     }
 
     while (start < end) {
+        int descriptors;
         descriptors = count_descriptors_by_pid(pid);
 
         if (descriptors == -1) {
@@ -111,7 +112,6 @@ static int logger_watcher(int pid, int interval, int time_limit) {
  */
 static DescriptorsArray *generate_fd_stats(int pid, int interval,
                                            int time_limit) {
-    int nb_descriptors;
     time_t start = time(NULL);
     time_t end = start + time_limit;
     long nb_slots = (end - start) / interval + 1;
@@ -133,6 +133,7 @@ static DescriptorsArray *generate_fd_stats(int pid, int interval,
     }
 
     for (int i = 0; i < nb_slots; i++) {
+        int nb_descriptors;
         nb_descriptors = count_descriptors_by_pid(pid);
 
         switch (nb_descriptors) {
@@ -184,14 +185,14 @@ static int write_stats_to_csv(DescriptorsArray *desc_array,
             fprintf(fp, "%d, %d\n", desc_array->timestamps[i],
                     desc_array->descriptors[i]);
         }
+        fclose(fp);
+
     } else {
         free(desc_array);
-        fclose(fp);
         fprintf(stderr, "failed to create %s", filepath);
         return 1;
     }
     free(desc_array);
-    fclose(fp);
 
     return 0;
 }
@@ -208,9 +209,18 @@ static int write_stats_to_csv(DescriptorsArray *desc_array,
 static void print_desc_array(DescriptorsArray *arr) {
     fprintf(stderr, "array: [\n");
 
-    for (int i; i < arr->length; i++) {
+    for (int i = 0; i < arr->length; i++) {
         fprintf(stderr, "   (%d, %d), \n", arr->descriptors[i],
                 arr->timestamps[i]);
     }
     fprintf(stderr, "]\n");
+}
+
+DescriptorsArray *new_desc_array(void) {
+    DescriptorsArray *desc =
+        (DescriptorsArray *)safe_malloc(sizeof(DescriptorsArray));
+    desc->descriptors = NULL;
+    desc->timestamps = NULL;
+    desc->length = 0;
+    return desc;
 }

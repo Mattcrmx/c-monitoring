@@ -1,0 +1,35 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-ast
+      - id: check-builtin-literals
+        exclude: tests
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-toml
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+    - id: black
+      files: ^src/fd_watcher
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: "v0.4.4"
+    hooks:
+    - id: ruff
+      args: ["--fix"]
+      files: ^src/fd_watcher
+
+  - repo: https://github.com/pocc/pre-commit-hooks
+    rev: v1.3.5
+    hooks:
+      - id: clang-format
+        args: [--style=file]
+        files: ^src/core
+      - id: cppcheck
+        files: ^src/core

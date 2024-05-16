@@ -1,5 +1,5 @@
 # fd-watcher
-A simple file descriptors watchdog. 
+A simple file descriptors watchdog.
 
 # Building
 Simply run the Makefile:
@@ -14,12 +14,12 @@ doxygen Doxyfile
 
 # Usage
 ```bash
-./fd-watcher --pid=42069
+./fd_watcher --pid=42069
 ```
-or 
+or
 
 ```bash
-./fd-watcher --name=mylittleprocess
+./fd_watcher --name=mylittleprocess
 ```
 
 Options can be specified:

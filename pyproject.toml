@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fd-watcher"
+authors = [
+    { name = "Matthias Cremieux" },
+]
+version = "0.1"
+urls = { Home = "https://github.com/MattCrmx/fd-watcher" }
+requires-python = ">=3.8"
+dependencies = [
+    "cython",
+    "matplotlib"
+]
+
+[project.optional-dependencies]
+dev = [
+    "black==22.3.0",
+    "pre-commit==2.18.1",
+    "pytest-env"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.mypy]
+ignore_missing_imports = true
+plugins = "numpy.typing.mypy_plugin"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+lint.select = [
+    "B",
+    "D",
+    "E",
+    "F",
+    "I",
+    "N",
+    "PGH",
+    "UP",
+    "S",
+    "T20",
+    "TID",
+    "W",
+    "RET"
+]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "parents"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

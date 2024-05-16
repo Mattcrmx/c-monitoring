@@ -85,7 +85,7 @@ void *safe_malloc(size_t size) {
     if (ptr != NULL) {
         return ptr;
     } else {
-        fprintf(stderr, "malloc of size %lu failed\n", size);
+        fprintf(stderr, "malloc of size %zu failed\n", size);
         exit(EXIT_FAILURE);
     }
 }
@@ -131,7 +131,6 @@ int get_pid_by_name(char name[]) {
 
     while ((de = readdir(proc)) != NULL) {
         FILE *fp;
-        long length;
 
         // skip files and skip . and ..
         if (de->d_type != DT_DIR || is_number(de->d_name) == 1) {
@@ -144,6 +143,7 @@ int get_pid_by_name(char name[]) {
         if (fp != NULL) {
             // read the file's content
             while (fgets(buffer, BUF_SIZE, fp) != NULL) {
+                long length;
                 length = strlen(buffer);
                 // Trim new line character from last if exists.
                 buffer[length - 1] =
@@ -181,10 +181,10 @@ char *get_name_from_pid(int pid) {
     char proc_path[255];
     sprintf(proc_path, "/proc/%d/status", pid);
     fp = fopen(proc_path, "r");
-    long length;
 
     if (fp) {
         while (fgets(buffer, BUF_SIZE, fp) != NULL) {
+            long length;
             length = strlen(buffer);
             // Trim new line character from last if exists.
             buffer[length - 1] =
