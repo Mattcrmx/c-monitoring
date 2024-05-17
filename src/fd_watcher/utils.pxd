@@ -19,3 +19,5 @@ cdef extern from "core/utils.h":
     int get_pid_by_name(char name[])
     void *safe_malloc(size_t size)
     char *get_name_from_pid(int pid)
+    Arguments *new_args(int interval, int time, char *name, int pid, int stats)
+    Arguments *new_empty_args()

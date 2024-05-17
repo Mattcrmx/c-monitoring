@@ -57,9 +57,9 @@ class FdWatcher:
         args = _CArguments(
             interval=self.interval,
             time=self.time,
-            name=self.name,
+            name=self.name.encode("utf-8"),
             pid=self.pid,
-            mode=mode,
+            mode=mode.encode("utf-8"),
         )
         desc_array = None
         if mode == WatchMode.STATISTICAL:

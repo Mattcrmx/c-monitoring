@@ -230,3 +230,25 @@ int process_exists(int pid) {
         return 0;
     }
 }
+
+Arguments *new_args(int interval, int time, char *name, int pid, int stats) {
+    Arguments *args = (Arguments *) safe_malloc(sizeof(Arguments));
+    args->interval = interval;
+    args->time = time;
+    args->name = name;
+    args->pid = pid;
+    args->stats = stats;
+
+    return args;
+}
+
+Arguments *new_empty_args(void) {
+    Arguments *args = (Arguments *) safe_malloc(sizeof(Arguments));
+    args->interval = 1;
+    args->time = 60;
+    args->name = NULL;
+    args->pid = -1;
+    args->stats = 0;
+
+    return args;
+}
