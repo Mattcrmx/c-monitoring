@@ -39,6 +39,6 @@ jobs:
 
     - name: Compile Cython code
       run: |
-        cd src/fd-watcher
+        cd src/fd_watcher
         python setup.py build_ext --inplace
 
