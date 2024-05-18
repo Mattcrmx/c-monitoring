@@ -232,7 +232,7 @@ int process_exists(int pid) {
 }
 
 Arguments *new_args(int interval, int time, char *name, int pid, int stats) {
-    Arguments *args = (Arguments *) safe_malloc(sizeof(Arguments));
+    Arguments *args = (Arguments *)safe_malloc(sizeof(Arguments));
     args->interval = interval;
     args->time = time;
     args->name = name;
@@ -243,7 +243,7 @@ Arguments *new_args(int interval, int time, char *name, int pid, int stats) {
 }
 
 Arguments *new_empty_args(void) {
-    Arguments *args = (Arguments *) safe_malloc(sizeof(Arguments));
+    Arguments *args = (Arguments *)safe_malloc(sizeof(Arguments));
     args->interval = 1;
     args->time = 60;
     args->name = NULL;
