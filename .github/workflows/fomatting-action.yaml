@@ -1,0 +1,34 @@
+
+name: Formatting Workflow
+
+on:
+  push:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+
+      - name: Install pre-commit
+        run: |
+          pip install pip --upgrade
+          pip install pre-commit
+
+      - name: Run pre-commit
+        run: |
+          pre-commit run -a
