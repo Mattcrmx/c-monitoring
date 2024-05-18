@@ -1,3 +1,6 @@
 .vscode/
 .idea/
 Doxyfile.bak
+docs/
+.ruff_cache/
+fd-watcher
