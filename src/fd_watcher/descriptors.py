@@ -7,19 +7,9 @@ from cython.cimports.utils import (
     get_pid_by_name,
 )
 
-
-@cython.cclass
-class _CDescriptorsArray:
-    """The Descriptor array struct wrapper."""
-
-    _c_descriptors_array: cython.pointer(monitor.DescriptorsArray)
-
-    def __cinit__(self):
-        self._c_descriptors_array = api.new_desc_array()
-
-    @property
-    def length(self) -> int:
-        return self._c_descriptors_array.length
+DescriptorArrayWrapper = cython.struct(
+    length=cython.int, descriptors=cython.pointer(int), timestamps=cython.pointer(int)
+)
 
 
 def py_get_name_from_pid(pid: cython.int) -> cython.p_char:
@@ -54,3 +44,20 @@ def py_watch(
     name: cython.p_char
 
     return api.literal_watch(interval, time, name, pid, stats)
+
+
+def generate_descriptor_array(
+    pid: cython.int, interval: cython.int, time_limit: cython.int
+) -> DescriptorArrayWrapper:
+    """Generate execution statistics.
+
+    Args:
+        pid: the process id
+        interval: the interval at which to capture data points
+        time_limit: the total monitoring time
+
+    Returns:
+        The wrapper class for the statistics.
+    """
+    arr = monitor.generate_fd_stats(pid, interval, time_limit)
+    return DescriptorArrayWrapper(arr.length, arr.descriptors, arr.timestamps)

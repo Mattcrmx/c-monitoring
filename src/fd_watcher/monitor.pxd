@@ -18,3 +18,4 @@ cdef extern from "core/monitor.h":
         int length
 
     int watch(Arguments arguments)
+    DescriptorsArray *generate_fd_stats(int pid, int interval, int time_limit)

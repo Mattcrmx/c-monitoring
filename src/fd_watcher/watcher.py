@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Literal
+from typing import Any, Literal
 
 from fd_watcher.descriptors import (
+    generate_descriptor_array,
     py_get_name_from_pid,
     py_get_pid_from_name,
     py_watch,
@@ -28,6 +29,7 @@ class FdWatcher:
     time: int
     name: str | None = None
     pid: int | None = None
+    desc_array: Any = None
 
     def __post_init__(self):
         """Post Initialization method."""
@@ -46,7 +48,11 @@ class FdWatcher:
         """C compatible name."""
         return self.name.encode("utf-8")
 
-    def watch(self, mode: Literal["logger", "statistical"]):
+    def _collect_stats(self):
+        """Statistics collection."""
+        return generate_descriptor_array(self.pid, self.interval, self.time)
+
+    def watch(self, mode: Literal["logger", "statistical"]) -> None:
         """The watchdog method for watching file descriptors leak.
 
         Args:

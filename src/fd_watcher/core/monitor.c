@@ -7,8 +7,6 @@
 #include "monitor.h"
 #include "utils.h"
 
-static DescriptorsArray *generate_fd_stats(int pid, int interval,
-                                           int time_limit);
 static int write_stats_to_csv(DescriptorsArray *desc_array, char *process_name);
 static int logger_watcher(int pid, int interval, int time_limit);
 static int count_descriptors_by_pid(int pid);
@@ -110,8 +108,7 @@ static int logger_watcher(int pid, int interval, int time_limit) {
  * doesn't exist or on error.
  *
  */
-static DescriptorsArray *generate_fd_stats(int pid, int interval,
-                                           int time_limit) {
+DescriptorsArray *generate_fd_stats(int pid, int interval, int time_limit) {
     time_t start = time(NULL);
     time_t end = start + time_limit;
     long nb_slots = (end - start) / interval + 1;

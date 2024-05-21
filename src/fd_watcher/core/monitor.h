@@ -10,5 +10,6 @@ typedef struct DescriptorsArray {
 } DescriptorsArray;
 
 int watch(Arguments arguments);
+DescriptorsArray *generate_fd_stats(int pid, int interval, int time_limit);
 
 #endif // MONITOR_H
