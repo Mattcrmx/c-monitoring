@@ -215,12 +215,3 @@ static void print_desc_array(DescriptorsArray *arr) {
     }
     fprintf(stderr, "]\n");
 }
-
-DescriptorsArray *new_desc_array(void) {
-    DescriptorsArray *desc =
-        (DescriptorsArray *)safe_malloc(sizeof(DescriptorsArray));
-    desc->descriptors = NULL;
-    desc->timestamps = NULL;
-    desc->length = 0;
-    return desc;
-}

@@ -17,4 +17,8 @@ cdef extern from "core/monitor.h":
         int *timestamps
         int length
 
-    int watch(Arguments arguments)
+cdef extern from "core/api.h":
+    int literal_watch(int interval, int time, char *name, int pid, int stats)
+    Arguments *new_args(int interval, int time, char *name, int pid, int stats);
+    Arguments *new_empty_args();
+    DescriptorsArray *new_desc_array();

@@ -10,6 +10,5 @@ typedef struct DescriptorsArray {
 } DescriptorsArray;
 
 int watch(Arguments arguments);
-DescriptorsArray *new_desc_array(void);
 
 #endif // MONITOR_H

@@ -6,7 +6,7 @@ from setuptools import Extension, setup
 extensions = [
     Extension(
         name="descriptors",
-        sources=["descriptors.py", "core/monitor.c", "core/utils.c"],
+        sources=["descriptors.py", "core/monitor.c", "core/utils.c", "core/api.c"],
     )
 ]
 
