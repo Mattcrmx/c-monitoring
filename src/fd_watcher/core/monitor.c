@@ -58,7 +58,7 @@ static int count_descriptors_by_pid(int pid) {
  * @return Returns 0 if successful, otherwise returns an error code.
  */
 int watch(Arguments arguments) {
-    int ret_code;
+    int ret_code = 1;
     DescriptorsArray *desc_array;
 
     switch (arguments.mode) {

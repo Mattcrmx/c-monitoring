@@ -32,7 +32,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential
-    
+
     - name: Build C extension
       run: |
         make CFLAGS="${CFLAGS} -Werror" CXXFLAGS="${CXXFLAGS} -Werror"
@@ -41,4 +41,3 @@ jobs:
       run: |
         cd src/fd_watcher
         python setup.py build_ext --inplace
-

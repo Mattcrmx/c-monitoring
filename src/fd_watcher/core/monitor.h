@@ -9,7 +9,7 @@ typedef struct DescriptorsArray {
     int length;
 } DescriptorsArray;
 
-#endif // MONITOR_H
-
 int watch(Arguments arguments);
 DescriptorsArray *new_desc_array(void);
+
+#endif // MONITOR_H

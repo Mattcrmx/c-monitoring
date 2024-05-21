@@ -104,4 +104,4 @@ int main(int argc, char *argv[]) {
     watch_return_code = watch(arguments);
 
     return watch_return_code;
-};
+}

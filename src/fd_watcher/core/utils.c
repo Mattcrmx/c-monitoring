@@ -6,8 +6,12 @@
 #include <string.h>
 #include <time.h>
 #include "utils.h"
-#include "monitor.h"
 
+#define MAX_STATUS_PATH_LENGTH 50
+#define MAX_SNPRINTF_OUT_LENGTH 269
+#define MAX_PROC_PATH_LENGTH                                                   \
+    16 // /proc/<pid>/fd arbitrary truncated up to 9999999
+#define PROC_NAME_INDEX 5
 #define BUF_SIZE 1024
 char buffer[BUF_SIZE];
 
@@ -127,7 +131,7 @@ int get_pid_by_name(char name[]) {
     struct dirent *de;
 
     proc = opendir("/proc");
-    char *status_path = safe_malloc(50);
+    char *status_path = safe_malloc(MAX_SNPRINTF_OUT_LENGTH);
 
     while ((de = readdir(proc)) != NULL) {
         FILE *fp;
@@ -137,7 +141,8 @@ int get_pid_by_name(char name[]) {
             continue;
         }
 
-        sprintf(status_path, "/proc/%s/status", de->d_name);
+        snprintf(status_path, MAX_SNPRINTF_OUT_LENGTH, "/proc/%s/status",
+                 de->d_name);
         fp = fopen(status_path, "r");
 
         if (fp != NULL) {
@@ -153,7 +158,7 @@ int get_pid_by_name(char name[]) {
                 char *res = strstr(buffer, "Name");
                 if (res) {
                     char proc_name[255];
-                    strcpy(proc_name, trim(&buffer[5]));
+                    strcpy(proc_name, trim(&buffer[PROC_NAME_INDEX]));
 
                     if (strcmp(name, proc_name) == 0) {
                         free(status_path);
@@ -178,9 +183,9 @@ int get_pid_by_name(char name[]) {
  */
 char *get_name_from_pid(int pid) {
     FILE *fp;
-    char proc_path[255];
-    sprintf(proc_path, "/proc/%d/status", pid);
-    fp = fopen(proc_path, "r");
+    char status_path[MAX_STATUS_PATH_LENGTH];
+    sprintf(status_path, "/proc/%d/status", pid);
+    fp = fopen(status_path, "r");
 
     if (fp) {
         while (fgets(buffer, BUF_SIZE, fp) != NULL) {
@@ -216,7 +221,7 @@ char *get_name_from_pid(int pid) {
  * @return 1 if the process exists, 0 otherwise.
  */
 int process_exists(int pid) {
-    char *proc_path = safe_malloc(16);
+    char *proc_path = safe_malloc(MAX_PROC_PATH_LENGTH);
     sprintf(proc_path, "/proc/%d/fd", pid);
 
     DIR *proc_dir;
@@ -249,6 +254,5 @@ Arguments *new_empty_args(void) {
     args->name = NULL;
     args->pid = -1;
     args->stats = 0;
-
     return args;
 }
