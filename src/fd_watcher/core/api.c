@@ -45,3 +45,34 @@ int literal_watch(int interval, int time, char *name, int pid, int stats) {
     ret_code = watch(args);
     return ret_code;
 }
+
+/**
+ * @brief Wrapper for statistics generation by passing struct directly.
+ *
+ * @param pid The process ID.
+ * @param interval Sampling interval in seconds.
+ * @param time_limit Maximum duration in seconds.
+ * @return DescriptorsArray with statistics, or invalid array if process
+ * doesn't exist or on error.
+ *
+ */
+DescriptorsArray generate_fd_stats_by_value(int pid, int interval,
+                                            int time_limit) {
+
+    DescriptorsArray *desc_array =
+        (DescriptorsArray *)safe_malloc(sizeof(DescriptorsArray));
+    desc_array = generate_fd_stats(pid, interval, time_limit);
+
+    if (desc_array == NULL) {
+        // Handle error by sending an invalid array and checking inside the
+        // binding
+        DescriptorsArray error_array;
+        error_array.length = -1;
+        error_array.descriptors = NULL;
+        error_array.timestamps = NULL;
+
+        return error_array;
+    } else {
+        return *desc_array;
+    }
+}

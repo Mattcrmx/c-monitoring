@@ -114,9 +114,8 @@ DescriptorsArray *generate_fd_stats(int pid, int interval, int time_limit) {
     long nb_slots = (end - start) / interval + 1;
     int *descriptors = (int *)safe_malloc(nb_slots * sizeof(int));
     int *timestamps = (int *)safe_malloc(nb_slots * sizeof(int));
-    DescriptorsArray *desc_array;
-
-    desc_array = (DescriptorsArray *)safe_malloc(sizeof(DescriptorsArray));
+    DescriptorsArray *desc_array =
+        (DescriptorsArray *)safe_malloc(sizeof(DescriptorsArray));
 
     desc_array->descriptors = NULL;
     desc_array->timestamps = NULL;

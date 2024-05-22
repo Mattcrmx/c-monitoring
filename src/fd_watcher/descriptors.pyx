@@ -1,9 +1,34 @@
-# The descriptors bindings file.
+"""The descriptors bindings file."""
 from cython.cimports import api, monitor
 from cython.cimports.utils import (
     get_name_from_pid,
     get_pid_by_name,
 )
+from cython.cimports.monitor import DescriptorsArray
+
+
+cdef class PyDescriptorsArray:
+    """The C Descriptor array wrapper"""
+    cdef DescriptorsArray desc_array
+
+    def __init__(self, pid, interval, time_limit):
+        """The initialization method"""
+        self.desc_array = api.generate_fd_stats_by_value(pid, interval, time_limit)
+
+    @property
+    def length(self):
+        """The array length."""
+        return self.desc_array.length
+
+    @property
+    def descriptors(self):
+        """The array length."""
+        return [self.desc_array.descriptors[i] for i in range(self.length)]
+
+    @property
+    def timestamps(self):
+        """The array length."""
+        return [self.desc_array.timestamps[i] for i in range(self.length)]
 
 
 cpdef char* py_get_name_from_pid(int pid):
@@ -37,16 +62,15 @@ cpdef int py_watch(
 
     return api.literal_watch(interval, time, cname, pid, stats)
 
-cpdef dict generate_descriptor_array(int pid, int interval, int time_limit):
+cpdef PyDescriptorsArray generate_descriptor_array(int pid, int interval, int time_limit):
     """Generate execution statistics.
 
     Args:
-        pid:
-        interval:
-        time_limit:
+        pid: the process id
+        interval: the interval at which to capture data points
+        time_limit: the time limit of the monitoring
 
     Returns:
         The wrapper class for the statistics.
     """
-    cdef dict *arr = monitor.generate_fd_stats(pid, interval, time_limit)
-    return arr
+    return PyDescriptorsArray(pid, interval, time_limit)

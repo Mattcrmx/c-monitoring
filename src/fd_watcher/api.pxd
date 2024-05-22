@@ -22,3 +22,4 @@ cdef extern from "core/api.h":
     Arguments *new_args(int interval, int time, char *name, int pid, int stats);
     Arguments *new_empty_args();
     DescriptorsArray *new_desc_array();
+    DescriptorsArray generate_fd_stats_by_value(int pid, int interval, int time_limit);
