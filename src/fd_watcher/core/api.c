@@ -7,6 +7,7 @@
 #include <time.h>
 #include "utils.h"
 #include "monitor.h"
+#include "api.h"
 
 Arguments *new_args(int interval, int time, char *name, int pid, int stats) {
     Arguments *args = (Arguments *)safe_malloc(sizeof(Arguments));
@@ -38,7 +39,7 @@ DescriptorsArray *new_desc_array(void) {
     return desc;
 }
 
-int literal_watch(int interval, int time, char *name, int pid, int stats) {
+int literal_watch(float interval, int time, char *name, int pid, int stats) {
     int ret_code = 1;
     Arguments args;
     args = *new_args(interval, time, name, pid, stats);
@@ -56,7 +57,7 @@ int literal_watch(int interval, int time, char *name, int pid, int stats) {
  * doesn't exist or on error.
  *
  */
-DescriptorsArray generate_fd_stats_by_value(int pid, int interval,
+DescriptorsArray generate_fd_stats_by_value(int pid, float interval,
                                             int time_limit) {
 
     DescriptorsArray *desc_array =

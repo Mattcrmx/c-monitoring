@@ -40,7 +40,7 @@ cpdef int py_get_pid_from_name(char* name):
     return get_pid_by_name(name)
 
 cpdef int py_watch(
-    int interval,
+    float interval,
     int time,
     bytes name,
     int pid,
@@ -62,7 +62,7 @@ cpdef int py_watch(
 
     return api.literal_watch(interval, time, cname, pid, stats)
 
-cpdef PyDescriptorsArray generate_descriptor_array(int pid, int interval, int time_limit):
+cpdef PyDescriptorsArray generate_descriptor_array(int pid, float interval, int time_limit):
     """Generate execution statistics.
 
     Args:

@@ -8,7 +8,7 @@
 #include "utils.h"
 
 static int write_stats_to_csv(DescriptorsArray *desc_array, char *process_name);
-static int logger_watcher(int pid, int interval, int time_limit);
+static int logger_watcher(int pid, float interval, int time_limit);
 static int count_descriptors_by_pid(int pid);
 static void print_desc_array(DescriptorsArray *arr);
 
@@ -73,7 +73,7 @@ int watch(Arguments arguments) {
     return ret_code;
 }
 
-static int logger_watcher(int pid, int interval, int time_limit) {
+static int logger_watcher(int pid, float interval, int time_limit) {
 
     time_t start = time(NULL);
     time_t end = start + time_limit;
@@ -108,12 +108,15 @@ static int logger_watcher(int pid, int interval, int time_limit) {
  * doesn't exist or on error.
  *
  */
-DescriptorsArray *generate_fd_stats(int pid, int interval, int time_limit) {
-    time_t start = time(NULL);
-    time_t end = start + time_limit;
-    long nb_slots = (end - start) / interval + 1;
+DescriptorsArray *generate_fd_stats(int pid, float interval, int time_limit) {
+    // we handle all computation in ms to be able to plot more granular data
+    time_t start = time(NULL) * 1000;
+    time_t end = start + (time_limit * 1000);
+    long lg_interval = (long)(interval * 1000);
+    long nb_slots = (end - start) / lg_interval + 1;
+    fprintf(stderr, "%ld", nb_slots);
     int *descriptors = (int *)safe_malloc(nb_slots * sizeof(int));
-    int *timestamps = (int *)safe_malloc(nb_slots * sizeof(int));
+    long *timestamps = (long *)safe_malloc(nb_slots * sizeof(long));
     DescriptorsArray *desc_array =
         (DescriptorsArray *)safe_malloc(sizeof(DescriptorsArray));
 
@@ -140,8 +143,10 @@ DescriptorsArray *generate_fd_stats(int pid, int interval, int time_limit) {
         default:
             // increment both tick and descriptors
             descriptors[i] = nb_descriptors;
-            timestamps[i] = start + i * interval;
+            timestamps[i] = start + i * lg_interval;
+            fprintf(stderr, "%ld", i * lg_interval);
             fprintf(stderr, "process %d: %d\n", pid, nb_descriptors);
+            // We sleep the duration in seconds and not in ms
             sleep(interval);
             break;
         }
@@ -178,7 +183,7 @@ static int write_stats_to_csv(DescriptorsArray *desc_array,
 
     if (fp != NULL) {
         for (int i = 0; i < desc_array->length; i++) {
-            fprintf(fp, "%d, %d\n", desc_array->timestamps[i],
+            fprintf(fp, "%ld, %d\n", desc_array->timestamps[i],
                     desc_array->descriptors[i]);
         }
         fclose(fp);
@@ -206,7 +211,7 @@ static void print_desc_array(DescriptorsArray *arr) {
     fprintf(stderr, "array: [\n");
 
     for (int i = 0; i < arr->length; i++) {
-        fprintf(stderr, "   (%d, %d), \n", arr->descriptors[i],
+        fprintf(stderr, "   (%d, %ld), \n", arr->descriptors[i],
                 arr->timestamps[i]);
     }
     fprintf(stderr, "]\n");

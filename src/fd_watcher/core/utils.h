@@ -9,7 +9,7 @@ typedef struct Arguments {
     char *name;
     int pid;
     int time;
-    int interval;
+    float interval;
     int stats;
     enum MODE mode;
 } Arguments;

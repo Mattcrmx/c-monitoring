@@ -12,7 +12,8 @@ urls = { Home = "https://github.com/MattCrmx/fd-watcher" }
 requires-python = ">=3.8"
 dependencies = [
     "cython",
-    "matplotlib"
+    "matplotlib",
+    "numpy"
 ]
 
 [project.optional-dependencies]

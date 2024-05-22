@@ -7,15 +7,12 @@ cdef extern from "core/utils.h":
         char *name
         int pid
         int time
-        int interval
+        float interval
         int stats
         MODE mode
 
 cdef extern from "core/monitor.h":
     cdef struct DescriptorsArray:
         int *descriptors
-        int *timestamps
+        long *timestamps
         int length
-
-    int watch(Arguments arguments)
-    DescriptorsArray *generate_fd_stats(int pid, int interval, int time_limit)

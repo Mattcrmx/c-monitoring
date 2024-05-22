@@ -9,10 +9,11 @@
 
 #define MAX_STATUS_PATH_LENGTH 50
 #define MAX_SNPRINTF_OUT_LENGTH 269
-#define MAX_PROC_PATH_LENGTH                                                   \
-    16 // /proc/<pid>/fd arbitrary truncated up to 9999999
+// /proc/<pid>/fd arbitrary truncated up to 9999999
+#define MAX_PROC_PATH_LENGTH 16
 #define PROC_NAME_INDEX 5
 #define BUF_SIZE 1024
+
 char buffer[BUF_SIZE];
 
 static int is_number(char *nb);

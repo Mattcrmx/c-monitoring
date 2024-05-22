@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Literal
+from typing import Literal
+
+import matplotlib.pyplot as plt
 
 from fd_watcher.descriptors import (
+    PyDescriptorsArray,
     generate_descriptor_array,
     py_get_name_from_pid,
     py_get_pid_from_name,
@@ -25,11 +28,9 @@ class WatchMode(str, Enum):
 class FdWatcher:
     """The File Descriptor Watcher base wrapper class."""
 
-    interval: int
-    time: int
     name: str | None = None
     pid: int | None = None
-    desc_array: Any = None
+    desc_array: PyDescriptorsArray = None
 
     def __post_init__(self):
         """Post Initialization method."""
@@ -48,23 +49,64 @@ class FdWatcher:
         """C compatible name."""
         return self.name.encode("utf-8")
 
-    def _collect_stats(self):
+    def _collect_stats(self, interval: float, time: int):
         """Statistics collection."""
-        return generate_descriptor_array(self.pid, self.interval, self.time)
+        self.desc_array = generate_descriptor_array(self.pid, interval, time)
 
-    def watch(self, mode: Literal["logger", "statistical"]) -> None:
+    def plot(
+        self,
+        figsize: tuple[int, int] = (10, 6),
+        save_path: str = "./fd_monitoring.png",
+    ):
+        """Plot the file descriptors monitoring.
+
+        Args:
+            figsize: the figure size for matplotlib
+            save_path: the path to save the figure
+        """
+        timestamps = self.desc_array.timestamps
+        # rescale timestamps
+        timestamps = [(x - timestamps[0]) / 1000 for x in timestamps]
+        descriptors = self.desc_array.descriptors
+
+        plt.figure(figsize=figsize)
+        plt.plot(
+            timestamps,
+            descriptors,
+            marker="o",
+            linestyle="-",
+            color="b",
+            label="File descriptors per tick",
+        )
+        plt.title("File descriptors monitoring", fontsize=16, fontweight="bold")
+        plt.xlabel("Time (s)", fontsize=14)
+        plt.ylabel("File descriptors", fontsize=14)
+        plt.grid(True, which="both", linestyle="--", linewidth=0.5)
+        plt.legend(loc="upper left", fontsize=12)
+        plt.gca().set_facecolor("whitesmoke")
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+        plt.show()
+
+    def watch(
+        self,
+        mode: Literal["logger", "statistical"],
+        interval: float = 1,
+        time: int = 60,
+    ) -> None:
         """The watchdog method for watching file descriptors leak.
 
         Args:
+            time: the total time frame of the monitoring
+            interval: the interval at which to capture data points
             mode: the watching mode.
 
         Returns:
             The descriptor array containing the leak statistics.
         """
-        py_watch(
-            interval=self.interval,
-            time=self.time,
-            name=self._c_name,
-            pid=self.pid,
-            stats=0 if mode == WatchMode.LOGGER else 1,
-        )
+        if mode == WatchMode.LOGGER:
+            py_watch(
+                interval=interval, time=time, name=self._c_name, pid=self.pid, stats=0
+            )
+        elif mode == WatchMode.STATISTICAL:
+            self._collect_stats(interval, time)
+            self.plot()
