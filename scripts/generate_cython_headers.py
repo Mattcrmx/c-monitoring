@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import re
 from enum import Enum
 from dataclasses import dataclass
-from typing import Union, List, Literal
+from typing import List, Literal
 
 
 class Token(str, Enum):
@@ -99,13 +101,23 @@ class CEnum(Declaration):
 
     def _cython_repr(self, base_indent: int) -> str:
         attrs = "\n".join(self.attributes)
+        return f"{Token.CYTHON_DECL_KW} {Token.ENUM_DECL} {self.name}:{attrs}"
+
+
+@dataclass(frozen=True)
+class Struct(Declaration):
+    name: str
+    attributes: List[Argument]
+
+    def _cython_repr(self, base_indent: int) -> str:
+        attrs = "\n".join([attr.to_cython(base_indent) for attr in self.attributes])
         return f"{Token.CYTHON_DECL_KW} {Token.STRUCT_DECL} {self.name}:{attrs}"
 
 
 def parse_statement(statement: str):
     if Token.HEADER_DECL in statement:
-        custom = re.search(fr'{Token.HEADER_DECL.value}\s+"([^"]+)"', statement)
-        standard = re.search(fr'{Token.HEADER_DECL.value}\s+<([^>]+)>', statement)
+        custom = re.search(fr'{Token.HEADER_DECL}\s+"([^"]+)"', statement)
+        standard = re.search(fr'{Token.HEADER_DECL}\s+<([^>]+)>', statement)
         return Header(
             name=standard.group(1) if standard else custom.group(1),
             type="standard" if standard else "custom"
@@ -132,8 +144,20 @@ def parse_enum(raw_enum: str):
     )
 
 
-def parse_struct(raw_struct_declaration: str):
-    pass
+def parse_struct(struct_name: str, raw_struct_declaration: str):
+    # TODO: handle inline definition of Enums
+    attributes = []
+    for attr in raw_struct_declaration.strip('{} \n').split(';'):
+        attr = attr.strip()
+        if attr:  # Add only non-empty values and handle simple enums
+            if Token.ENUM_DECL in attr:
+                _, name, tp = attr.split(Token.WHITESPACE)
+            else:
+                name, tp = attr.split(Token.WHITESPACE)
+            attributes.append(
+                Argument(name=name, type=tp)
+            )
+    return Struct(name=struct_name, attributes=attributes)
 
 
 def tokenize(raw_declaration: str):
@@ -165,29 +189,34 @@ def tokenize(raw_declaration: str):
             # Handle structs or typedef structs
             raw_struct_declaration = ""
             if raw_declaration[idx: idx + len(Token.STRUCT_DECL)] == Token.STRUCT_DECL:
+                idx = idx + len(Token.STRUCT_DECL) + 1  # include whitespace
+                struct_name = ""
+                while raw_declaration[idx] != Token.WHITESPACE:
+                    struct_name += raw_declaration[idx]
+                    idx += 1
                 # peek 2 chars to see end of declaration
-                while raw_declaration[idx:idx+2] != Token.STRUCT_END:
+                while raw_declaration[idx:idx+len(Token.STRUCT_END)] != Token.STRUCT_END:
                     raw_struct_declaration += raw_declaration[idx]
                     idx += 1
-                toks.append(parse_struct(raw_struct_declaration))
+                toks.append(parse_struct(struct_name, raw_struct_declaration))
                 idx = idx + len(Token.STRUCT_DECL)
 
             elif raw_declaration[idx: idx + len(Token.TYPEDEF_STRUCT_DECL)] == Token.TYPEDEF_STRUCT_DECL:
                 # first extract name
                 idx = idx + len(Token.TYPEDEF_STRUCT_DECL) + 1  # include whitespace
                 struct_name = ""
-                while raw_declaration[idx] != Token.DEFINITION_START:
+                while raw_declaration[idx] != Token.WHITESPACE:
                     struct_name += raw_declaration[idx]
                     idx += 1
 
                 # extract struct definition until typedef end
-                while raw_declaration[idx: idx + len(struct_name) + 1] != struct_name + Token.DEFINITION_END:
+                while raw_declaration[idx: idx + len(struct_name) + 1] != struct_name + Token.END_STMT:
                     raw_struct_declaration += raw_declaration[idx]
                     idx += 1
 
-                toks.append(parse_struct(raw_struct_declaration))
+                toks.append(parse_struct(struct_name, raw_struct_declaration))
                 # move pointer
-                idx = idx + len(struct_name) + 1
+                idx = idx + len(struct_name)
 
         elif raw_declaration[idx] == Token.INT_START:
             # TODO
@@ -206,7 +235,7 @@ def tokenize(raw_declaration: str):
             # TODO
             pass
 
-
+    return toks
 
 
 
@@ -233,3 +262,4 @@ if __name__ == '__main__':
         header = f.read()
 
     toks = tokenize(header)
+    print(toks)
